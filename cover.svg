@@ -1,0 +1,155 @@
+<svg width="952" height="398" viewBox="0 0 952 398" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <rect width="952" height="398" fill="url(#backgroundGradient)"/>
+  
+  <!-- Grid pattern overlay -->
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#3b82f6" stroke-width="0.5" opacity="0.1"/>
+    </pattern>
+    
+    <!-- Background gradient -->
+    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1" />
+      <stop offset="30%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="70%" style="stop-color:#334155;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#475569;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Service gradients -->
+    <radialGradient id="serviceGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#60a5fa;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
+    </radialGradient>
+    
+    <radialGradient id="gatewayGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#34d399;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </radialGradient>
+    
+    <radialGradient id="cloudGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fbbf24;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#d97706;stop-opacity:1" />
+    </radialGradient>
+    
+    <!-- Glow effect -->
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect width="952" height="398" fill="url(#grid)"/>
+  
+  <!-- Title and subtitle -->
+  <text x="476" y="60" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="36" font-weight="bold">
+    Trace Headers Generator
+  </text>
+  <text x="476" y="90" text-anchor="middle" fill="#cbd5e1" font-family="Arial, sans-serif" font-size="18">
+    Generate distributed tracing headers and Snowflake IDs for observability systems
+  </text>
+  
+  <!-- Main trace flow visualization -->
+  
+  <!-- API Gateway (entry point) -->
+  <circle cx="150" cy="200" r="25" fill="url(#gatewayGradient)" stroke="#10b981" stroke-width="2" filter="url(#glow)"/>
+  <text x="150" y="235" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="12">API Gateway</text>
+  
+  <!-- Microservices -->
+  <circle cx="350" cy="150" r="20" fill="url(#serviceGradient)" stroke="#3b82f6" stroke-width="2" filter="url(#glow)"/>
+  <text x="350" y="180" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="10">Auth Service</text>
+  
+  <circle cx="450" cy="200" r="20" fill="url(#serviceGradient)" stroke="#3b82f6" stroke-width="2" filter="url(#glow)"/>
+  <text x="450" y="230" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="10">User Service</text>
+  
+  <circle cx="350" cy="250" r="20" fill="url(#serviceGradient)" stroke="#3b82f6" stroke-width="2" filter="url(#glow)"/>
+  <text x="350" y="280" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="10">Data Service</text>
+  
+  <!-- Cloud services -->
+  <circle cx="650" cy="150" r="22" fill="url(#cloudGradient)" stroke="#f59e0b" stroke-width="2" filter="url(#glow)"/>
+  <text x="650" y="180" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="10">AWS X-Ray</text>
+  
+  <circle cx="750" cy="200" r="22" fill="url(#cloudGradient)" stroke="#f59e0b" stroke-width="2" filter="url(#glow)"/>
+  <text x="750" y="230" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="10">Datadog</text>
+  
+  <circle cx="650" cy="250" r="22" fill="url(#cloudGradient)" stroke="#f59e0b" stroke-width="2" filter="url(#glow)"/>
+  <text x="650" y="280" text-anchor="middle" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="10">New Relic</text>
+  
+  <!-- Trace flow lines with animation -->
+  <path d="M175 200 L325 150" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" opacity="0.8">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" repeatCount="indefinite"/>
+  </path>
+  <path d="M175 200 L425 200" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" opacity="0.8">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" begin="0.5s" repeatCount="indefinite"/>
+  </path>
+  <path d="M175 200 L325 250" stroke="#60a5fa" stroke-width="3" stroke-linecap="round" opacity="0.8">
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" begin="1s" repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Service to observability connections -->
+  <path d="M370 150 L628 150" stroke="#34d399" stroke-width="2" stroke-dasharray="5,5" opacity="0.7">
+    <animate attributeName="stroke-dashoffset" values="0;10" dur="2s" repeatCount="indefinite"/>
+  </path>
+  <path d="M470 200 L728 200" stroke="#34d399" stroke-width="2" stroke-dasharray="5,5" opacity="0.7">
+    <animate attributeName="stroke-dashoffset" values="0;10" dur="2s" begin="0.7s" repeatCount="indefinite"/>
+  </path>
+  <path d="M370 250 L628 250" stroke="#34d399" stroke-width="2" stroke-dasharray="5,5" opacity="0.7">
+    <animate attributeName="stroke-dashoffset" values="0;10" dur="2s" begin="1.3s" repeatCount="indefinite"/>
+  </path>
+  
+  <!-- Trace ID flowing particles -->
+  <circle r="3" fill="#fbbf24" opacity="0.9">
+    <animateMotion dur="4s" repeatCount="indefinite">
+      <path d="M175 200 L325 150 L628 150"/>
+    </animateMotion>
+  </circle>
+  <circle r="3" fill="#fbbf24" opacity="0.9">
+    <animateMotion dur="4s" begin="1s" repeatCount="indefinite">
+      <path d="M175 200 L425 200 L728 200"/>
+    </animateMotion>
+  </circle>
+  <circle r="3" fill="#fbbf24" opacity="0.9">
+    <animateMotion dur="4s" begin="2s" repeatCount="indefinite">
+      <path d="M175 200 L325 250 L628 250"/>
+    </animateMotion>
+  </circle>
+  
+  <!-- Header examples -->
+  <rect x="50" y="320" width="200" height="60" rx="8" fill="#1e293b" stroke="#3b82f6" stroke-width="1" opacity="0.8"/>
+  <text x="60" y="340" fill="#60a5fa" font-family="monospace" font-size="10">traceparent:</text>
+  <text x="60" y="355" fill="#f1f5f9" font-family="monospace" font-size="9">00-4bf92f3577b34da6-00f067aa0ba902b7-01</text>
+  <text x="60" y="370" fill="#60a5fa" font-family="monospace" font-size="10">x-datadog-trace-id:</text>
+  <text x="60" y="385" fill="#f1f5f9" font-family="monospace" font-size="9">1234567890123456789</text>
+  
+  <rect x="280" y="320" width="180" height="60" rx="8" fill="#1e293b" stroke="#10b981" stroke-width="1" opacity="0.8"/>
+  <text x="290" y="340" fill="#34d399" font-family="monospace" font-size="10">x-tyk-traceid:</text>
+  <text x="290" y="355" fill="#f1f5f9" font-family="monospace" font-size="9">abc123def456789</text>
+  <text x="290" y="370" fill="#34d399" font-family="monospace" font-size="10">snowflake-id:</text>
+  <text x="290" y="385" fill="#f1f5f9" font-family="monospace" font-size="9">1234567890123456</text>
+  
+  <rect x="490" y="320" width="200" height="60" rx="8" fill="#1e293b" stroke="#f59e0b" stroke-width="1" opacity="0.8"/>
+  <text x="500" y="340" fill="#fbbf24" font-family="monospace" font-size="10">x-amzn-trace-id:</text>
+  <text x="500" y="355" fill="#f1f5f9" font-family="monospace" font-size="9">Root=1-67890abc-def123</text>
+  <text x="500" y="370" fill="#fbbf24" font-family="monospace" font-size="10">uber-trace-id:</text>
+  <text x="500" y="385" fill="#f1f5f9" font-family="monospace" font-size="9">trace:span:parent:flags</text>
+  
+  <!-- System logos/labels -->
+  <rect x="750" y="320" width="150" height="60" rx="8" fill="#1e293b" stroke="#8b5cf6" stroke-width="1" opacity="0.8"/>
+  <text x="760" y="340" fill="#a78bfa" font-family="Arial, sans-serif" font-size="12" font-weight="bold">Supported Systems:</text>
+  <text x="760" y="355" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="9">• OpenTelemetry • Datadog</text>
+  <text x="760" y="368" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="9">• AWS X-Ray • Azure</text>
+  <text x="760" y="381" fill="#f1f5f9" font-family="Arial, sans-serif" font-size="9">• Jaeger • Zipkin • Tyk</text>
+  
+  <!-- Snowflake pattern decoration -->
+  <g transform="translate(850, 100)">
+    <path d="M0,-15 L0,15 M-13,-7.5 L13,7.5 M-13,7.5 L13,-7.5" stroke="#60a5fa" stroke-width="1.5" opacity="0.3"/>
+    <circle cx="0" cy="0" r="3" fill="#60a5fa" opacity="0.5"/>
+  </g>
+  <g transform="translate(870, 130)">
+    <path d="M0,-10 L0,10 M-8.7,-5 L8.7,5 M-8.7,5 L8.7,-5" stroke="#34d399" stroke-width="1" opacity="0.3"/>
+    <circle cx="0" cy="0" r="2" fill="#34d399" opacity="0.5"/>
+  </g>
+</svg>
