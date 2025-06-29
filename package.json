@@ -4,8 +4,12 @@
   "description": "Generate cryptographically secure tracing headers and Snowflake IDs for various APM and observability systems including Tyk API Gateway",
   "main": "app.js",
   "keywords": ["insomnia", "plugin", "tracing", "observability", "apm", "opentelemetry", "crypto", "security", "tyk", "api-gateway", "snowflake", "distributed-systems"],
-  "author": "Your Name",
+  "author": "Nitin V Manthena",
   "license": "MIT",
+  "repository": {
+		"type": "git",
+		"url": "git://github.com/pedruino/insomnia-plugin-traceparent-tag.git"
+	},
   "insomnia": {
     "name": "trace-headers",
     "displayName": "Trace Headers Generator",
@@ -13,6 +17,11 @@
     "images": {
       "icon": "icon.svg",
       "cover": "cover.svg"
-    }
+    },
+     "publisher": {
+      "name": "Nitin V Manthena",
+      "icon": "https://avatars.githubusercontent.com/u/10714536"
+    },
+    "unlisted": false
   }
 }

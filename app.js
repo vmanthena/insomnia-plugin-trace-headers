@@ -67,16 +67,16 @@ module.exports.templateTags = [
   // W3C Trace Context / OpenTelemetry
   {
     name: 'traceparent',
-    displayName: 'W3C Traceparent',
+    displayName: 'Trace Headers:W3C Traceparent',
     description: 'Generate W3C traceparent header for OpenTelemetry distributed tracing',
     args: [
       {
-        displayName: 'Version',
+        displayName: 'Trace Headers:Version',
         type: 'string',
         defaultValue: '00'
       },
       {
-        displayName: 'Sampled',
+        displayName: 'Trace Headers:Sampled',
         type: 'boolean',
         defaultValue: true
       }
@@ -91,16 +91,16 @@ module.exports.templateTags = [
 
   {
     name: 'tracestate',
-    displayName: 'W3C Tracestate',
+    displayName: 'Trace Headers:W3C Tracestate',
     description: 'Generate W3C tracestate header',
     args: [
       {
-        displayName: 'Vendor Key',
+        displayName: 'Trace Headers:Vendor Key',
         type: 'string',
         defaultValue: 'vendor'
       },
       {
-        displayName: 'Vendor Value',
+        displayName: 'Trace Headers:Vendor Value',
         type: 'string',
         defaultValue: 'value'
       }
@@ -113,7 +113,7 @@ module.exports.templateTags = [
   // Datadog APM Headers
   {
     name: 'datadog_trace_id',
-    displayName: 'Datadog Trace ID',
+    displayName: 'Trace Headers:Datadog Trace ID',
     description: 'Generate Datadog trace ID header',
     args: [],
     run() {
@@ -123,7 +123,7 @@ module.exports.templateTags = [
 
   {
     name: 'datadog_parent_id',
-    displayName: 'Datadog Parent ID',
+    displayName: 'Trace Headers:Datadog Parent ID',
     description: 'Generate Datadog parent/span ID header',
     args: [],
     run() {
@@ -133,18 +133,18 @@ module.exports.templateTags = [
 
   {
     name: 'datadog_sampling_priority',
-    displayName: 'Datadog Sampling Priority',
+    displayName: 'Trace Headers:Datadog Sampling Priority',
     description: 'Generate Datadog sampling priority header',
     args: [
       {
-        displayName: 'Priority',
+        displayName: 'Trace Headers:Priority',
         type: 'enum',
         defaultValue: '1',
         options: [
-          { displayName: 'Auto Reject (-1)', value: '-1' },
-          { displayName: 'Auto Keep (0)', value: '0' },
-          { displayName: 'User Keep (1)', value: '1' },
-          { displayName: 'User Reject (2)', value: '2' }
+          { displayName: 'Trace Headers:Auto Reject (-1)', value: '-1' },
+          { displayName: 'Trace Headers:Auto Keep (0)', value: '0' },
+          { displayName: 'Trace Headers:User Keep (1)', value: '1' },
+          { displayName: 'Trace Headers:User Reject (2)', value: '2' }
         ]
       }
     ],
@@ -155,11 +155,11 @@ module.exports.templateTags = [
 
   {
     name: 'datadog_origin',
-    displayName: 'Datadog Origin',
+    displayName: 'Trace Headers:Datadog Origin',
     description: 'Generate Datadog origin header',
     args: [
       {
-        displayName: 'Origin',
+        displayName: 'Trace Headers:Origin',
         type: 'string',
         defaultValue: 'synthetics'
       }
@@ -171,16 +171,16 @@ module.exports.templateTags = [
 
   {
     name: 'datadog_tags',
-    displayName: 'Datadog Tags',
+    displayName: 'Trace Headers:Datadog Tags',
     description: 'Generate Datadog tags header',
     args: [
       {
-        displayName: 'Environment',
+        displayName: 'Trace Headers:Environment',
         type: 'string',
         defaultValue: 'production'
       },
       {
-        displayName: 'Service',
+        displayName: 'Trace Headers:Service',
         type: 'string',
         defaultValue: 'api'
       }
@@ -193,7 +193,7 @@ module.exports.templateTags = [
   // AWS X-Ray Headers
   {
     name: 'aws_trace_id',
-    displayName: 'AWS X-Ray Trace ID',
+    displayName: 'Trace Headers:AWS X-Ray Trace ID',
     description: 'Generate AWS X-Ray trace ID header',
     args: [],
     run() {
@@ -205,7 +205,7 @@ module.exports.templateTags = [
 
   {
     name: 'aws_request_id',
-    displayName: 'AWS Request ID',
+    displayName: 'Trace Headers:AWS Request ID',
     description: 'Generate AWS request ID header',
     args: [],
     run() {
@@ -215,7 +215,7 @@ module.exports.templateTags = [
 
   {
     name: 'aws_cf_id',
-    displayName: 'AWS CloudFront ID',
+    displayName: 'Trace Headers:AWS CloudFront ID',
     description: 'Generate AWS CloudFront ID header',
     args: [],
     run() {
@@ -225,7 +225,7 @@ module.exports.templateTags = [
 
   {
     name: 'aws_id_2',
-    displayName: 'AWS ID 2',
+    displayName: 'Trace Headers:AWS ID 2',
     description: 'Generate AWS x-amz-id-2 header',
     args: [],
     run() {
@@ -236,7 +236,7 @@ module.exports.templateTags = [
   // Azure Application Insights Headers
   {
     name: 'azure_request_id',
-    displayName: 'Azure Request ID',
+    displayName: 'Trace Headers:Azure Request ID',
     description: 'Generate Azure request ID header',
     args: [],
     run() {
@@ -246,11 +246,11 @@ module.exports.templateTags = [
 
   {
     name: 'azure_request_context',
-    displayName: 'Azure Request Context',
+    displayName: 'Trace Headers:Azure Request Context',
     description: 'Generate Azure request context header',
     args: [
       {
-        displayName: 'App ID',
+        displayName: 'Trace Headers:App ID',
         type: 'string',
         defaultValue: 'unknown'
       }
@@ -262,7 +262,7 @@ module.exports.templateTags = [
 
   {
     name: 'azure_client_request_id',
-    displayName: 'Azure Client Request ID',
+    displayName: 'Trace Headers:Azure Client Request ID',
     description: 'Generate Azure client request ID header',
     args: [],
     run() {
@@ -272,7 +272,7 @@ module.exports.templateTags = [
 
   {
     name: 'azure_correlation_request_id',
-    displayName: 'Azure Correlation Request ID',
+    displayName: 'Trace Headers:Azure Correlation Request ID',
     description: 'Generate Azure correlation request ID header',
     args: [],
     run() {
@@ -283,7 +283,7 @@ module.exports.templateTags = [
   // Jaeger Headers
   {
     name: 'jaeger_trace_id',
-    displayName: 'Jaeger Trace ID',
+    displayName: 'Trace Headers:Jaeger Trace ID',
     description: 'Generate Uber/Jaeger trace ID header',
     args: [],
     run() {
@@ -296,7 +296,7 @@ module.exports.templateTags = [
 
   {
     name: 'jaeger_debug_id',
-    displayName: 'Jaeger Debug ID',
+    displayName: 'Trace Headers:Jaeger Debug ID',
     description: 'Generate Jaeger debug ID header',
     args: [],
     run() {
@@ -306,16 +306,16 @@ module.exports.templateTags = [
 
   {
     name: 'jaeger_baggage',
-    displayName: 'Jaeger Baggage',
+    displayName: 'Trace Headers:Jaeger Baggage',
     description: 'Generate Jaeger baggage header',
     args: [
       {
-        displayName: 'Key',
+        displayName: 'Trace Headers:Key',
         type: 'string',
         defaultValue: 'userid'
       },
       {
-        displayName: 'Value',
+        displayName: 'Trace Headers:Value',
         type: 'string',
         defaultValue: '12345'
       }
@@ -328,16 +328,16 @@ module.exports.templateTags = [
   // Zipkin B3 Headers
   {
     name: 'zipkin_trace_id',
-    displayName: 'Zipkin B3 Trace ID',
+    displayName: 'Trace Headers:Zipkin B3 Trace ID',
     description: 'Generate Zipkin B3 trace ID header',
     args: [
       {
-        displayName: 'Length',
+        displayName: 'Trace Headers:Length',
         type: 'enum',
         defaultValue: '128',
         options: [
-          { displayName: '64-bit', value: '64' },
-          { displayName: '128-bit', value: '128' }
+          { displayName: 'Trace Headers:64-bit', value: '64' },
+          { displayName: 'Trace Headers:128-bit', value: '128' }
         ]
       }
     ],
@@ -348,7 +348,7 @@ module.exports.templateTags = [
 
   {
     name: 'zipkin_span_id',
-    displayName: 'Zipkin B3 Span ID',
+    displayName: 'Trace Headers:Zipkin B3 Span ID',
     description: 'Generate Zipkin B3 span ID header',
     args: [],
     run() {
@@ -358,7 +358,7 @@ module.exports.templateTags = [
 
   {
     name: 'zipkin_parent_span_id',
-    displayName: 'Zipkin B3 Parent Span ID',
+    displayName: 'Trace Headers:Zipkin B3 Parent Span ID',
     description: 'Generate Zipkin B3 parent span ID header',
     args: [],
     run() {
@@ -368,11 +368,11 @@ module.exports.templateTags = [
 
   {
     name: 'zipkin_sampled',
-    displayName: 'Zipkin B3 Sampled',
+    displayName: 'Trace Headers:Zipkin B3 Sampled',
     description: 'Generate Zipkin B3 sampled header',
     args: [
       {
-        displayName: 'Sampled',
+        displayName: 'Trace Headers:Sampled',
         type: 'boolean',
         defaultValue: true
       }
@@ -384,7 +384,7 @@ module.exports.templateTags = [
 
   {
     name: 'zipkin_flags',
-    displayName: 'Zipkin B3 Flags',
+    displayName: 'Trace Headers:Zipkin B3 Flags',
     description: 'Generate Zipkin B3 flags header',
     args: [],
     run() {
@@ -394,11 +394,11 @@ module.exports.templateTags = [
 
   {
     name: 'zipkin_b3_single',
-    displayName: 'Zipkin B3 Single Header',
+    displayName: 'Trace Headers:Zipkin B3 Single Header',
     description: 'Generate Zipkin B3 single header format',
     args: [
       {
-        displayName: 'Sampled',
+        displayName: 'Trace Headers:Sampled',
         type: 'boolean',
         defaultValue: true
       }
@@ -414,16 +414,16 @@ module.exports.templateTags = [
   // New Relic Headers
   {
     name: 'newrelic_header',
-    displayName: 'New Relic Header',
+    displayName: 'Trace Headers:New Relic Header',
     description: 'Generate New Relic distributed tracing header',
     args: [
       {
-        displayName: 'Account ID',
+        displayName: 'Trace Headers:Account ID',
         type: 'string',
         defaultValue: '1234567'
       },
       {
-        displayName: 'App ID',
+        displayName: 'Trace Headers:App ID',
         type: 'string',
         defaultValue: '7654321'
       }
@@ -448,7 +448,7 @@ module.exports.templateTags = [
 
   {
     name: 'newrelic_id',
-    displayName: 'New Relic ID',
+    displayName: 'Trace Headers:New Relic ID',
     description: 'Generate New Relic ID header',
     args: [],
     run() {
@@ -458,7 +458,7 @@ module.exports.templateTags = [
 
   {
     name: 'newrelic_transaction',
-    displayName: 'New Relic Transaction',
+    displayName: 'Trace Headers:New Relic Transaction',
     description: 'Generate New Relic transaction header',
     args: [],
     run() {
@@ -469,7 +469,7 @@ module.exports.templateTags = [
   // Google Cloud Trace
   {
     name: 'gcloud_trace_context',
-    displayName: 'Google Cloud Trace Context',
+    displayName: 'Trace Headers:Google Cloud Trace Context',
     description: 'Generate Google Cloud trace context header',
     args: [],
     run() {
@@ -479,7 +479,7 @@ module.exports.templateTags = [
 
   {
     name: 'goog_trace',
-    displayName: 'Google Trace',
+    displayName: 'Trace Headers:Google Trace',
     description: 'Generate Google trace header',
     args: [],
     run() {
@@ -490,7 +490,7 @@ module.exports.templateTags = [
   // CloudFlare Headers
   {
     name: 'cloudflare_ray',
-    displayName: 'CloudFlare Ray ID',
+    displayName: 'Trace Headers:CloudFlare Ray ID',
     description: 'Generate CloudFlare Ray ID header',
     args: [],
     run() {
@@ -502,7 +502,7 @@ module.exports.templateTags = [
 
   {
     name: 'cloudflare_request_id',
-    displayName: 'CloudFlare Request ID',
+    displayName: 'Trace Headers:CloudFlare Request ID',
     description: 'Generate CloudFlare request ID header',
     args: [],
     run() {
@@ -513,11 +513,11 @@ module.exports.templateTags = [
   // Sentry Headers
   {
     name: 'sentry_trace',
-    displayName: 'Sentry Trace',
+    displayName: 'Trace Headers:Sentry Trace',
     description: 'Generate Sentry trace header',
     args: [
       {
-        displayName: 'Sampled',
+        displayName: 'Trace Headers:Sampled',
         type: 'boolean',
         defaultValue: true
       }
@@ -532,11 +532,11 @@ module.exports.templateTags = [
 
   {
     name: 'sentry_baggage',
-    displayName: 'Sentry Baggage',
+    displayName: 'Trace Headers:Sentry Baggage',
     description: 'Generate Sentry baggage header',
     args: [
       {
-        displayName: 'Environment',
+        displayName: 'Trace Headers:Environment',
         type: 'string',
         defaultValue: 'production'
       }
@@ -549,11 +549,11 @@ module.exports.templateTags = [
   // Elastic APM
   {
     name: 'elastic_traceparent',
-    displayName: 'Elastic APM Traceparent',
+    displayName: 'Trace Headers:Elastic APM Traceparent',
     description: 'Generate Elastic APM traceparent header (W3C format)',
     args: [
       {
-        displayName: 'Sampled',
+        displayName: 'Trace Headers:Sampled',
         type: 'boolean',
         defaultValue: true
       }
@@ -568,7 +568,7 @@ module.exports.templateTags = [
 
   {
     name: 'elastic_tracestate',
-    displayName: 'Elastic APM Tracestate',
+    displayName: 'Trace Headers:Elastic APM Tracestate',
     description: 'Generate Elastic APM tracestate header',
     args: [],
     run() {
@@ -579,11 +579,11 @@ module.exports.templateTags = [
   // Dynatrace Headers
   {
     name: 'dynatrace_header',
-    displayName: 'Dynatrace Header',
+    displayName: 'Trace Headers:Dynatrace Header',
     description: 'Generate Dynatrace tracing header',
     args: [
       {
-        displayName: 'Application ID',
+        displayName: 'Trace Headers:Application ID',
         type: 'string',
         defaultValue: 'APPLICATION-12345'
       }
@@ -597,7 +597,7 @@ module.exports.templateTags = [
 
   {
     name: 'dynatrace_origin',
-    displayName: 'Dynatrace Origin',
+    displayName: 'Trace Headers:Dynatrace Origin',
     description: 'Generate Dynatrace origin header',
     args: [],
     run() {
@@ -608,7 +608,7 @@ module.exports.templateTags = [
   // AppDynamics
   {
     name: 'appdynamics_header',
-    displayName: 'AppDynamics Header',
+    displayName: 'Trace Headers:AppDynamics Header',
     description: 'Generate AppDynamics singularityheader',
     args: [],
     run() {
@@ -619,11 +619,11 @@ module.exports.templateTags = [
   // Honeycomb
   {
     name: 'honeycomb_trace',
-    displayName: 'Honeycomb Trace',
+    displayName: 'Trace Headers:Honeycomb Trace',
     description: 'Generate Honeycomb trace header',
     args: [
       {
-        displayName: 'Dataset',
+        displayName: 'Trace Headers:Dataset',
         type: 'string',
         defaultValue: 'my-service'
       }
@@ -635,11 +635,11 @@ module.exports.templateTags = [
 
   {
     name: 'honeycomb_dataset',
-    displayName: 'Honeycomb Dataset',
+    displayName: 'Trace Headers:Honeycomb Dataset',
     description: 'Generate Honeycomb dataset header',
     args: [
       {
-        displayName: 'Dataset Name',
+        displayName: 'Trace Headers:Dataset Name',
         type: 'string',
         defaultValue: 'my-service'
       }
@@ -651,17 +651,17 @@ module.exports.templateTags = [
 
   {
     name: 'honeycomb_samplerate',
-    displayName: 'Honeycomb Sample Rate',
+    displayName: 'Trace Headers:Honeycomb Sample Rate',
     description: 'Generate Honeycomb sample rate header',
     args: [
       {
-        displayName: 'Sample Rate',
+        displayName: 'Trace Headers:Sample Rate',
         type: 'enum',
         defaultValue: '1',
         options: [
-          { displayName: '1 (100%)', value: '1' },
-          { displayName: '10 (10%)', value: '10' },
-          { displayName: '100 (1%)', value: '100' }
+          { displayName: 'Trace Headers:1 (100%)', value: '1' },
+          { displayName: 'Trace Headers:10 (10%)', value: '10' },
+          { displayName: 'Trace Headers:100 (1%)', value: '100' }
         ]
       }
     ],
@@ -673,7 +673,7 @@ module.exports.templateTags = [
   // LightStep
   {
     name: 'lightstep_span_context',
-    displayName: 'LightStep Span Context',
+    displayName: 'Trace Headers:LightStep Span Context',
     description: 'Generate LightStep span context header',
     args: [],
     run() {
@@ -684,7 +684,7 @@ module.exports.templateTags = [
   // Istio/Envoy
   {
     name: 'envoy_request_id',
-    displayName: 'Envoy Request ID',
+    displayName: 'Trace Headers:Envoy Request ID',
     description: 'Generate Envoy request ID header',
     args: [],
     run() {
@@ -694,11 +694,11 @@ module.exports.templateTags = [
 
   {
     name: 'envoy_original_path',
-    displayName: 'Envoy Original Path',
+    displayName: 'Trace Headers:Envoy Original Path',
     description: 'Generate Envoy original path header',
     args: [
       {
-        displayName: 'Original Path',
+        displayName: 'Trace Headers:Original Path',
         type: 'string',
         defaultValue: '/api/v1/users'
       }
@@ -711,17 +711,17 @@ module.exports.templateTags = [
   // Tyk API Gateway Headers
   {
     name: 'tyk_trace_id',
-    displayName: 'Tyk Trace ID',
+    displayName: 'Trace Headers:Tyk Trace ID',
     description: 'Generate Tyk API Gateway trace ID header',
     args: [
       {
-        displayName: 'Format',
+        displayName: 'Trace Headers:Format',
         type: 'enum',
         defaultValue: 'hex',
         options: [
-          { displayName: 'Hexadecimal', value: 'hex' },
-          { displayName: 'UUID', value: 'uuid' },
-          { displayName: 'Numeric', value: 'numeric' }
+          { displayName: 'Trace Headers:Hexadecimal', value: 'hex' },
+          { displayName: 'Trace Headers:UUID', value: 'uuid' },
+          { displayName: 'Trace Headers:Numeric', value: 'numeric' }
         ]
       }
     ],
@@ -734,7 +734,7 @@ module.exports.templateTags = [
 
   {
     name: 'tyk_request_id',
-    displayName: 'Tyk Request ID',
+    displayName: 'Trace Headers:Tyk Request ID',
     description: 'Generate Tyk API Gateway request ID header',
     args: [],
     run() {
@@ -744,11 +744,11 @@ module.exports.templateTags = [
 
   {
     name: 'tyk_authorization',
-    displayName: 'Tyk Authorization',
+    displayName: 'Trace Headers:Tyk Authorization',
     description: 'Generate Tyk authorization header (for management API)',
     args: [
       {
-        displayName: 'Secret Key',
+        displayName: 'Trace Headers:Secret Key',
         type: 'string',
         defaultValue: 'your-tyk-secret-key'
       }
@@ -760,11 +760,11 @@ module.exports.templateTags = [
 
   {
     name: 'tyk_version',
-    displayName: 'Tyk API Version',
+    displayName: 'Trace Headers:Tyk API Version',
     description: 'Generate Tyk API version header',
     args: [
       {
-        displayName: 'Version',
+        displayName: 'Trace Headers:Version',
         type: 'string',
         defaultValue: 'v1'
       }
@@ -776,7 +776,7 @@ module.exports.templateTags = [
 
   {
     name: 'tyk_base_api_id',
-    displayName: 'Tyk Base API ID',
+    displayName: 'Trace Headers:Tyk Base API ID',
     description: 'Generate Tyk base API ID header for versioned APIs',
     args: [],
     run() {
@@ -786,7 +786,7 @@ module.exports.templateTags = [
 
   {
     name: 'tyk_session_id',
-    displayName: 'Tyk Session ID',
+    displayName: 'Trace Headers:Tyk Session ID',
     description: 'Generate Tyk session identifier',
     args: [],
     run() {
@@ -797,27 +797,27 @@ module.exports.templateTags = [
   // Snowflake ID Headers
   {
     name: 'snowflake_id',
-    displayName: 'Snowflake ID',
+    displayName: 'Trace Headers:Snowflake ID',
     description: 'Generate a Twitter-style Snowflake ID (64-bit distributed unique identifier)',
     args: [
       {
-        displayName: 'Machine ID',
+        displayName: 'Trace Headers:Machine ID',
         type: 'number',
         defaultValue: 0
       },
       {
-        displayName: 'Epoch Type',
+        displayName: 'Trace Headers:Epoch Type',
         type: 'enum',
         defaultValue: 'twitter',
         options: [
-          { displayName: 'Twitter (Nov 4, 2010)', value: 'twitter' },
-          { displayName: 'Discord (Jan 1, 2015)', value: 'discord' },
-          { displayName: 'Unix Epoch (Jan 1, 1970)', value: 'unix' },
-          { displayName: 'Custom', value: 'custom' }
+          { displayName: 'Trace Headers:Twitter (Nov 4, 2010)', value: 'twitter' },
+          { displayName: 'Trace Headers:Discord (Jan 1, 2015)', value: 'discord' },
+          { displayName: 'Trace Headers:Unix Epoch (Jan 1, 1970)', value: 'unix' },
+          { displayName: 'Trace Headers:Custom', value: 'custom' }
         ]
       },
       {
-        displayName: 'Custom Epoch (ms)',
+        displayName: 'Trace Headers:Custom Epoch (ms)',
         type: 'number',
         defaultValue: 1288834974657
       }
@@ -837,11 +837,11 @@ module.exports.templateTags = [
 
   {
     name: 'twitter_snowflake',
-    displayName: 'Twitter Snowflake',
+    displayName: 'Trace Headers:Twitter Snowflake',
     description: 'Generate a Twitter Snowflake ID using Twitter\'s epoch',
     args: [
       {
-        displayName: 'Machine ID',
+        displayName: 'Trace Headers:Machine ID',
         type: 'number',
         defaultValue: 0
       }
@@ -853,11 +853,11 @@ module.exports.templateTags = [
 
   {
     name: 'discord_snowflake',
-    displayName: 'Discord Snowflake',
+    displayName: 'Trace Headers:Discord Snowflake',
     description: 'Generate a Discord Snowflake ID using Discord\'s epoch',
     args: [
       {
-        displayName: 'Machine ID',
+        displayName: 'Trace Headers:Machine ID',
         type: 'number',
         defaultValue: 0
       }
@@ -869,16 +869,16 @@ module.exports.templateTags = [
 
   {
     name: 'custom_snowflake',
-    displayName: 'Custom Snowflake ID',
+    displayName: 'Trace Headers:Custom Snowflake ID',
     description: 'Generate a custom Snowflake ID with configurable parameters',
     args: [
       {
-        displayName: 'Epoch Start (ms)',
+        displayName: 'Trace Headers:Epoch Start (ms)',
         type: 'number',
         defaultValue: 1609459200000
       },
       {
-        displayName: 'Machine ID',
+        displayName: 'Trace Headers:Machine ID',
         type: 'number',
         defaultValue: 0
       }
@@ -891,18 +891,18 @@ module.exports.templateTags = [
   // Generic Correlation Headers
   {
     name: 'correlation_id',
-    displayName: 'Correlation ID',
+    displayName: 'Trace Headers:Correlation ID',
     description: 'Generate a correlation ID header',
     args: [
       {
-        displayName: 'Format',
+        displayName: 'Trace Headers:Format',
         type: 'enum',
         defaultValue: 'uuid',
         options: [
-          { displayName: 'UUID', value: 'uuid' },
-          { displayName: 'Hex (64-bit)', value: 'hex64' },
-          { displayName: 'Hex (128-bit)', value: 'hex128' },
-          { displayName: 'Numeric', value: 'numeric' }
+          { displayName: 'Trace Headers:UUID', value: 'uuid' },
+          { displayName: 'Trace Headers:Hex (64-bit)', value: 'hex64' },
+          { displayName: 'Trace Headers:Hex (128-bit)', value: 'hex128' },
+          { displayName: 'Trace Headers:Numeric', value: 'numeric' }
         ]
       }
     ],
@@ -919,7 +919,7 @@ module.exports.templateTags = [
 
   {
     name: 'trace_id',
-    displayName: 'Generic Trace ID',
+    displayName: 'Trace Headers:Generic Trace ID',
     description: 'Generate a generic trace ID header',
     args: [],
     run() {
@@ -929,7 +929,7 @@ module.exports.templateTags = [
 
   {
     name: 'span_id',
-    displayName: 'Generic Span ID',
+    displayName: 'Trace Headers:Generic Span ID',
     description: 'Generate a generic span ID header',
     args: [],
     run() {
@@ -939,7 +939,7 @@ module.exports.templateTags = [
 
   {
     name: 'parent_id',
-    displayName: 'Generic Parent ID',
+    displayName: 'Trace Headers:Generic Parent ID',
     description: 'Generate a generic parent ID header',
     args: [],
     run() {
@@ -949,7 +949,7 @@ module.exports.templateTags = [
 
   {
     name: 'operation_id',
-    displayName: 'Operation ID',
+    displayName: 'Trace Headers:Operation ID',
     description: 'Generate an operation ID header',
     args: [],
     run() {
@@ -959,7 +959,7 @@ module.exports.templateTags = [
 
   {
     name: 'session_id',
-    displayName: 'Session ID',
+    displayName: 'Trace Headers:Session ID',
     description: 'Generate a session ID header',
     args: [],
     run() {
@@ -969,17 +969,17 @@ module.exports.templateTags = [
 
   {
     name: 'user_id',
-    displayName: 'User ID',
+    displayName: 'Trace Headers:User ID',
     description: 'Generate a user ID header',
     args: [
       {
-        displayName: 'Format',
+        displayName: 'Trace Headers:Format',
         type: 'enum',
         defaultValue: 'numeric',
         options: [
-          { displayName: 'Numeric', value: 'numeric' },
-          { displayName: 'UUID', value: 'uuid' },
-          { displayName: 'Hex', value: 'hex' }
+          { displayName: 'Trace Headers:Numeric', value: 'numeric' },
+          { displayName: 'Trace Headers:UUID', value: 'uuid' },
+          { displayName: 'Trace Headers:Hex', value: 'hex' }
         ]
       }
     ],
@@ -995,7 +995,7 @@ module.exports.templateTags = [
 
   {
     name: 'tenant_id',
-    displayName: 'Tenant ID',
+    displayName: 'Trace Headers:Tenant ID',
     description: 'Generate a tenant ID header',
     args: [],
     run() {
@@ -1005,7 +1005,7 @@ module.exports.templateTags = [
 
   {
     name: 'application_id',
-    displayName: 'Application ID',
+    displayName: 'Trace Headers:Application ID',
     description: 'Generate an application ID header',
     args: [],
     run() {
@@ -1015,7 +1015,7 @@ module.exports.templateTags = [
 
   {
     name: 'service_id',
-    displayName: 'Service ID',
+    displayName: 'Trace Headers:Service ID',
     description: 'Generate a service ID header',
     args: [],
     run() {
@@ -1026,21 +1026,21 @@ module.exports.templateTags = [
   // Custom Trace Header Builder
   {
     name: 'custom_trace_header',
-    displayName: 'Custom Trace Header',
+    displayName: 'Trace Headers:Custom Trace Header',
     description: 'Generate a custom trace header with configurable format',
     args: [
       {
-        displayName: 'Format',
+        displayName: 'Trace Headers:Format',
         type: 'string',
         defaultValue: '{traceId}-{spanId}'
       },
       {
-        displayName: 'Trace ID Length',
+        displayName: 'Trace Headers:Trace ID Length',
         type: 'enum',
         defaultValue: '128',
         options: [
-          { displayName: '64-bit', value: '64' },
-          { displayName: '128-bit', value: '128' }
+          { displayName: 'Trace Headers:64-bit', value: '64' },
+          { displayName: 'Trace Headers:128-bit', value: '128' }
         ]
       }
     ],
