@@ -1,3 +1,5 @@
+
+![Insomnia Trace Headers Plugin](cover.svg)
 # Insomnia Trace Headers Plugin
 
 A comprehensive Insomnia plugin for generating distributed tracing headers and Snowflake IDs for various APM and observability systems using cryptographically secure random number generation.
