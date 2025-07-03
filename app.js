@@ -1,6 +1,83 @@
 const crypto = require('crypto');
 
-// Helper functions for generating various ID formats
+// =============================================================================
+// CONSTANTS AND VALIDATION PATTERNS
+// =============================================================================
+
+// Default values
+const DEFAULTS = {
+  VERSION: '00',
+  SAMPLED: true,
+  VENDOR_KEY: 'vendor',
+  VENDOR_VALUE: 'value',
+  PRIORITY: '1',
+  ORIGIN: 'synthetics',
+  ENVIRONMENT: 'production',
+  SERVICE: 'api',
+  APP_ID: 'unknown',
+  BAGGAGE_KEY: 'userid',
+  BAGGAGE_VALUE: '12345',
+  TRACE_LENGTH: '128',
+  ACCOUNT_ID: '1234567',
+  NEW_RELIC_APP_ID: '7654321',
+  DATASET: 'my-service',
+  SAMPLE_RATE: '1',
+  PATH: '/api/v1/users',
+  FORMAT: 'hex',
+  SECRET_KEY: 'your-tyk-secret-key',
+  API_VERSION: 'v1',
+  MACHINE_ID: 0,
+  EPOCH_TYPE: 'twitter',
+  CUSTOM_EPOCH: 1288834974657,
+  CORRELATION_FORMAT: 'uuid',
+  USER_FORMAT: 'numeric',
+  TRACE_FORMAT: '{traceId}-{spanId}',
+  DYNATRACE_APP_ID: 'APPLICATION-12345',
+  GUID_FORMAT: 'N' // Default to 'N' format (no hyphens)
+};
+
+// Regex patterns for validation
+const PATTERNS = {
+  HEX_2: /^[0-9a-fA-F]{2}$/,
+  HEX_FLEXIBLE: /^[0-9a-fA-F]+$/,
+  ALPHANUMERIC: /^[a-zA-Z0-9_-]+$/,
+  ALPHANUMERIC_DOT: /^[a-zA-Z0-9._-]+$/,
+  NUMERIC: /^\d+$/,
+  PRIORITY: /^-?[0-2]$/,
+  VERSION_STRING: /^v?\d+(\.\d+)*$/,
+  BOOLEAN_STRING: /^(true|false|1|0)$/i,
+  SERVICE_NAME: /^[a-zA-Z0-9._-]+$/,
+  ENVIRONMENT_NAME: /^[a-zA-Z0-9._-]+$/,
+  PATH: /^\/[a-zA-Z0-9\/_-]*$/,
+  FORMAT_ENUM: /^(hex|uuid|numeric)$/,
+  TRACE_LENGTH: /^(64|128)$/,
+  SAMPLE_RATE: /^(1|10|100)$/,
+  EPOCH_TYPE: /^(twitter|discord|unix|custom)$/,
+  CORRELATION_FORMAT: /^(uuid|hex64|hex128|numeric)$/,
+  USER_FORMAT: /^(numeric|uuid|hex)$/,
+  TRACE_FORMAT: /^[a-zA-Z0-9{}_-]+$/,
+  KEY_VALUE: /^[a-zA-Z0-9._-]+$/,
+  APP_ID: /^[a-zA-Z0-9._-]+$/,
+  DATADOG_PRIORITY: /^(-1|0|1|2)$/,
+  GUID_FORMAT: /^(N|D|B|P)$/
+};
+
+// Valid enum values
+const ENUMS = {
+  PRIORITY: ['-1', '0', '1', '2'],
+  TRACE_LENGTH: ['64', '128'],
+  SAMPLE_RATE: ['1', '10', '100'],
+  FORMAT: ['hex', 'uuid', 'numeric'],
+  EPOCH_TYPE: ['twitter', 'discord', 'unix', 'custom'],
+  CORRELATION_FORMAT: ['uuid', 'hex64', 'hex128', 'numeric'],
+  USER_FORMAT: ['numeric', 'uuid', 'hex'],
+  GUID_FORMAT: ['N', 'D', 'B', 'P']
+};
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
 function randomHex(length) {
   try {
     return crypto.randomBytes(length).toString('hex');
@@ -26,6 +103,24 @@ function randomUUID() {
       const v = c == 'x' ? r : (r & 0x3 | 0x8);
       return v.toString(16);
     });
+  }
+}
+
+function formatGUID(uuid, format) {
+  // Remove existing hyphens to get base format
+  const clean = uuid.replace(/-/g, '');
+  
+  switch (format) {
+    case 'N': // 32 digits: 00000000000000000000000000000000
+      return clean;
+    case 'D': // 32 digits separated by hyphens: 00000000-0000-0000-0000-000000000000
+      return `${clean.substring(0,8)}-${clean.substring(8,12)}-${clean.substring(12,16)}-${clean.substring(16,20)}-${clean.substring(20,32)}`;
+    case 'B': // 32 digits separated by hyphens, enclosed in braces: {00000000-0000-0000-0000-000000000000}
+      return `{${clean.substring(0,8)}-${clean.substring(8,12)}-${clean.substring(12,16)}-${clean.substring(16,20)}-${clean.substring(20,32)}}`;
+    case 'P': // 32 digits separated by hyphens, enclosed in parentheses: (00000000-0000-0000-0000-000000000000)
+      return `(${clean.substring(0,8)}-${clean.substring(8,12)}-${clean.substring(12,16)}-${clean.substring(16,20)}-${clean.substring(20,32)})`;
+    default:
+      return clean; // Default to 'N' format
   }
 }
 
@@ -62,141 +157,210 @@ function generateSnowflake(epoch = 1288834974657, machineId = 0) {
   return `${ts}${machine.toString().padStart(4, '0')}${seq.toString().padStart(4, '0')}`;
 }
 
-// Complete template tags with proper naming (no hyphens!)
+// Comprehensive parameter validation function
+function validateParam(value, type, pattern, enumValues, defaultValue) {
+  // Handle undefined/null
+  if (value === undefined || value === null) {
+    return defaultValue;
+  }
+  
+  // Convert to string for pattern matching (except for numbers and booleans)
+  const stringValue = String(value);
+  
+  // Handle different parameter types
+  switch (type) {
+    case 'boolean':
+      if (value === true || value === 'true' || value === '1' || value === 1) {
+        return true;
+      }
+      if (value === false || value === 'false' || value === '0' || value === 0) {
+        return false;
+      }
+      // If we get unexpected values (like environment variable names), use default
+      return defaultValue;
+      
+    case 'number':
+      const num = Number(value);
+      if (isNaN(num) || num < 0) {
+        return defaultValue;
+      }
+      return num;
+      
+    case 'enum':
+      if (enumValues && enumValues.includes(stringValue)) {
+        return stringValue;
+      }
+      return defaultValue;
+      
+    case 'string':
+    default:
+      // Handle environment variable mishaps (when user selects "Environment value" by mistake)
+      if (value === true || value === false) {
+        return defaultValue;
+      }
+      
+      // Validate against pattern if provided
+      if (pattern && !pattern.test(stringValue)) {
+        return defaultValue;
+      }
+      
+      return stringValue || defaultValue;
+  }
+}
+
+// =============================================================================
+// TEMPLATE TAGS
+// =============================================================================
+
 module.exports.templateTags = [
   // W3C Trace Context / OpenTelemetry
   {
     name: 'traceparent',
-    displayName: 'Trace Headers:W3C Traceparent',
+    displayName: 'Trace Headers: W3C Traceparent',
     description: 'Generate W3C traceparent header for OpenTelemetry distributed tracing',
     args: [
       {
-        displayName: 'Trace Headers:Version',
+        displayName: 'Version',
+        description: 'W3C trace context version (hex 00-FF)',
         type: 'string',
-        defaultValue: '00'
+        defaultValue: DEFAULTS.VERSION
       },
       {
-        displayName: 'Trace Headers:Sampled',
+        displayName: 'Sampled',
+        description: 'Whether the trace is sampled',
         type: 'boolean',
-        defaultValue: true
+        defaultValue: DEFAULTS.SAMPLED
       }
     ],
-    run(context, version, sampled) {
+    async run(context, version, sampled) {
+      const versionStr = validateParam(version, 'string', PATTERNS.HEX_2, null, DEFAULTS.VERSION);
+      const isSampled = validateParam(sampled, 'boolean', null, null, DEFAULTS.SAMPLED);
+      
       const traceId = randomHex(16);
       const spanId = randomHex(8);
-      const flags = sampled ? '01' : '00';
-      return `${version}-${traceId}-${spanId}-${flags}`;
+      const flags = isSampled ? '01' : '00';
+      return `${versionStr}-${traceId}-${spanId}-${flags}`;
     }
   },
 
   {
     name: 'tracestate',
-    displayName: 'Trace Headers:W3C Tracestate',
+    displayName: 'Trace Headers: W3C Tracestate',
     description: 'Generate W3C tracestate header',
     args: [
       {
-        displayName: 'Trace Headers:Vendor Key',
+        displayName: 'Vendor Key',
+        description: 'Vendor-specific key (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: 'vendor'
+        defaultValue: DEFAULTS.VENDOR_KEY
       },
       {
-        displayName: 'Trace Headers:Vendor Value',
+        displayName: 'Vendor Value',
+        description: 'Vendor-specific value (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: 'value'
+        defaultValue: DEFAULTS.VENDOR_VALUE
       }
     ],
-    run(context, key, value) {
-      return `${key}=${value}`;
+    async run(context, key, value) {
+      const safeKey = validateParam(key, 'string', PATTERNS.KEY_VALUE, null, DEFAULTS.VENDOR_KEY);
+      const safeValue = validateParam(value, 'string', PATTERNS.KEY_VALUE, null, DEFAULTS.VENDOR_VALUE);
+      return `${safeKey}=${safeValue}`;
     }
   },
 
   // Datadog APM Headers
   {
     name: 'datadog_trace_id',
-    displayName: 'Trace Headers:Datadog Trace ID',
+    displayName: 'Trace Headers: Datadog Trace ID',
     description: 'Generate Datadog trace ID header',
     args: [],
-    run() {
+    async run() {
       return randomNumber();
     }
   },
 
   {
     name: 'datadog_parent_id',
-    displayName: 'Trace Headers:Datadog Parent ID',
+    displayName: 'Trace Headers: Datadog Parent ID',
     description: 'Generate Datadog parent/span ID header',
     args: [],
-    run() {
+    async run() {
       return randomNumber();
     }
   },
 
   {
     name: 'datadog_sampling_priority',
-    displayName: 'Trace Headers:Datadog Sampling Priority',
+    displayName: 'Trace Headers: Datadog Sampling Priority',
     description: 'Generate Datadog sampling priority header',
     args: [
       {
-        displayName: 'Trace Headers:Priority',
+        displayName: 'Priority',
+        description: 'Sampling priority level (-1, 0, 1, 2)',
         type: 'enum',
-        defaultValue: '1',
+        defaultValue: DEFAULTS.PRIORITY,
         options: [
-          { displayName: 'Trace Headers:Auto Reject (-1)', value: '-1' },
-          { displayName: 'Trace Headers:Auto Keep (0)', value: '0' },
-          { displayName: 'Trace Headers:User Keep (1)', value: '1' },
-          { displayName: 'Trace Headers:User Reject (2)', value: '2' }
+          { displayName: 'Auto Reject (-1)', value: '-1' },
+          { displayName: 'Auto Keep (0)', value: '0' },
+          { displayName: 'User Keep (1)', value: '1' },
+          { displayName: 'User Reject (2)', value: '2' }
         ]
       }
     ],
-    run(context, priority) {
-      return priority;
+    async run(context, priority) {
+      return validateParam(priority, 'enum', null, ENUMS.PRIORITY, DEFAULTS.PRIORITY);
     }
   },
 
   {
     name: 'datadog_origin',
-    displayName: 'Trace Headers:Datadog Origin',
+    displayName: 'Trace Headers: Datadog Origin',
     description: 'Generate Datadog origin header',
     args: [
       {
-        displayName: 'Trace Headers:Origin',
+        displayName: 'Origin',
+        description: 'Origin type (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: 'synthetics'
+        defaultValue: DEFAULTS.ORIGIN
       }
     ],
-    run(context, origin) {
-      return origin;
+    async run(context, origin) {
+      return validateParam(origin, 'string', PATTERNS.ALPHANUMERIC, null, DEFAULTS.ORIGIN);
     }
   },
 
   {
     name: 'datadog_tags',
-    displayName: 'Trace Headers:Datadog Tags',
+    displayName: 'Trace Headers: Datadog Tags',
     description: 'Generate Datadog tags header',
     args: [
       {
-        displayName: 'Trace Headers:Environment',
+        displayName: 'Environment',
+        description: 'Environment name (alphanumeric, dash, underscore, dot)',
         type: 'string',
-        defaultValue: 'production'
+        defaultValue: DEFAULTS.ENVIRONMENT
       },
       {
-        displayName: 'Trace Headers:Service',
+        displayName: 'Service',
+        description: 'Service name (alphanumeric, dash, underscore, dot)',
         type: 'string',
-        defaultValue: 'api'
+        defaultValue: DEFAULTS.SERVICE
       }
     ],
-    run(context, env, service) {
-      return `_dd.p.env=${env},_dd.p.service=${service}`;
+    async run(context, env, service) {
+      const safeEnv = validateParam(env, 'string', PATTERNS.ENVIRONMENT_NAME, null, DEFAULTS.ENVIRONMENT);
+      const safeService = validateParam(service, 'string', PATTERNS.SERVICE_NAME, null, DEFAULTS.SERVICE);
+      return `_dd.p.env=${safeEnv},_dd.p.service=${safeService}`;
     }
   },
 
   // AWS X-Ray Headers
   {
     name: 'aws_trace_id',
-    displayName: 'Trace Headers:AWS X-Ray Trace ID',
+    displayName: 'Trace Headers: AWS X-Ray Trace ID',
     description: 'Generate AWS X-Ray trace ID header',
     args: [],
-    run() {
+    async run() {
       const ts = Math.floor(Date.now() / 1000).toString(16);
       const random = randomHex(12);
       return `Root=1-${ts}-${random}`;
@@ -205,30 +369,45 @@ module.exports.templateTags = [
 
   {
     name: 'aws_request_id',
-    displayName: 'Trace Headers:AWS Request ID',
+    displayName: 'Trace Headers: AWS Request ID',
     description: 'Generate AWS request ID header',
-    args: [],
-    run() {
-      return randomUUID();
+    args: [
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
+        ]
+      }
+    ],
+    async run(context, guidFormat) {
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      const uuid = randomUUID();
+      return formatGUID(uuid, safeGuidFormat);
     }
   },
 
   {
     name: 'aws_cf_id',
-    displayName: 'Trace Headers:AWS CloudFront ID',
+    displayName: 'Trace Headers: AWS CloudFront ID',
     description: 'Generate AWS CloudFront ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(28) + '==';
     }
   },
 
   {
     name: 'aws_id_2',
-    displayName: 'Trace Headers:AWS ID 2',
+    displayName: 'Trace Headers: AWS ID 2',
     description: 'Generate AWS x-amz-id-2 header',
     args: [],
-    run() {
+    async run() {
       return randomHex(32) + '/abcdef+123456=';
     }
   },
@@ -236,46 +415,63 @@ module.exports.templateTags = [
   // Azure Application Insights Headers
   {
     name: 'azure_request_id',
-    displayName: 'Trace Headers:Azure Request ID',
+    displayName: 'Trace Headers: Azure Request ID',
     description: 'Generate Azure request ID header',
-    args: [],
-    run() {
-      return randomUUID();
+    args: [
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
+        ]
+      }
+    ],
+    async run(context, guidFormat) {
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      const uuid = randomUUID();
+      return formatGUID(uuid, safeGuidFormat);
     }
   },
 
   {
     name: 'azure_request_context',
-    displayName: 'Trace Headers:Azure Request Context',
+    displayName: 'Trace Headers: Azure Request Context',
     description: 'Generate Azure request context header',
     args: [
       {
-        displayName: 'Trace Headers:App ID',
+        displayName: 'App ID',
+        description: 'Application ID (alphanumeric, dash, underscore, dot)',
         type: 'string',
-        defaultValue: 'unknown'
+        defaultValue: DEFAULTS.APP_ID
       }
     ],
-    run(context, appId) {
-      return `appId=cid-v1:${appId}`;
+    async run(context, appId) {
+      const safeAppId = validateParam(appId, 'string', PATTERNS.APP_ID, null, DEFAULTS.APP_ID);
+      return `appId=cid-v1:${safeAppId}`;
     }
   },
 
   {
     name: 'azure_client_request_id',
-    displayName: 'Trace Headers:Azure Client Request ID',
+    displayName: 'Trace Headers: Azure Client Request ID',
     description: 'Generate Azure client request ID header',
     args: [],
-    run() {
+    async run() {
       return randomUUID();
     }
   },
 
   {
     name: 'azure_correlation_request_id',
-    displayName: 'Trace Headers:Azure Correlation Request ID',
+    displayName: 'Trace Headers: Azure Correlation Request ID',
     description: 'Generate Azure correlation request ID header',
     args: [],
-    run() {
+    async run() {
       return randomUUID();
     }
   },
@@ -283,10 +479,10 @@ module.exports.templateTags = [
   // Jaeger Headers
   {
     name: 'jaeger_trace_id',
-    displayName: 'Trace Headers:Jaeger Trace ID',
+    displayName: 'Trace Headers: Jaeger Trace ID',
     description: 'Generate Uber/Jaeger trace ID header',
     args: [],
-    run() {
+    async run() {
       const traceId = randomHex(16);
       const spanId = randomHex(8);
       const parentId = randomHex(8);
@@ -296,117 +492,127 @@ module.exports.templateTags = [
 
   {
     name: 'jaeger_debug_id',
-    displayName: 'Trace Headers:Jaeger Debug ID',
+    displayName: 'Trace Headers: Jaeger Debug ID',
     description: 'Generate Jaeger debug ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(16);
     }
   },
 
   {
     name: 'jaeger_baggage',
-    displayName: 'Trace Headers:Jaeger Baggage',
+    displayName: 'Trace Headers: Jaeger Baggage',
     description: 'Generate Jaeger baggage header',
     args: [
       {
-        displayName: 'Trace Headers:Key',
+        displayName: 'Key',
+        description: 'Baggage key (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: 'userid'
+        defaultValue: DEFAULTS.BAGGAGE_KEY
       },
       {
-        displayName: 'Trace Headers:Value',
+        displayName: 'Value',
+        description: 'Baggage value (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: '12345'
+        defaultValue: DEFAULTS.BAGGAGE_VALUE
       }
     ],
-    run(context, key, value) {
-      return `${key}=${value}`;
+    async run(context, key, value) {
+      const safeKey = validateParam(key, 'string', PATTERNS.KEY_VALUE, null, DEFAULTS.BAGGAGE_KEY);
+      const safeValue = validateParam(value, 'string', PATTERNS.KEY_VALUE, null, DEFAULTS.BAGGAGE_VALUE);
+      return `${safeKey}=${safeValue}`;
     }
   },
 
   // Zipkin B3 Headers
   {
     name: 'zipkin_trace_id',
-    displayName: 'Trace Headers:Zipkin B3 Trace ID',
+    displayName: 'Trace Headers: Zipkin B3 Trace ID',
     description: 'Generate Zipkin B3 trace ID header',
     args: [
       {
-        displayName: 'Trace Headers:Length',
+        displayName: 'Length',
+        description: 'Trace ID length in bits (64 or 128)',
         type: 'enum',
-        defaultValue: '128',
+        defaultValue: DEFAULTS.TRACE_LENGTH,
         options: [
-          { displayName: 'Trace Headers:64-bit', value: '64' },
-          { displayName: 'Trace Headers:128-bit', value: '128' }
+          { displayName: '64-bit', value: '64' },
+          { displayName: '128-bit', value: '128' }
         ]
       }
     ],
-    run(context, length) {
-      return length === '128' ? randomHex(16) : randomHex(8);
+    async run(context, length) {
+      const safeLength = validateParam(length, 'enum', null, ENUMS.TRACE_LENGTH, DEFAULTS.TRACE_LENGTH);
+      return safeLength === '128' ? randomHex(16) : randomHex(8);
     }
   },
 
   {
     name: 'zipkin_span_id',
-    displayName: 'Trace Headers:Zipkin B3 Span ID',
+    displayName: 'Trace Headers: Zipkin B3 Span ID',
     description: 'Generate Zipkin B3 span ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(8);
     }
   },
 
   {
     name: 'zipkin_parent_span_id',
-    displayName: 'Trace Headers:Zipkin B3 Parent Span ID',
+    displayName: 'Trace Headers: Zipkin B3 Parent Span ID',
     description: 'Generate Zipkin B3 parent span ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(8);
     }
   },
 
   {
     name: 'zipkin_sampled',
-    displayName: 'Trace Headers:Zipkin B3 Sampled',
+    displayName: 'Trace Headers: Zipkin B3 Sampled',
     description: 'Generate Zipkin B3 sampled header',
     args: [
       {
-        displayName: 'Trace Headers:Sampled',
+        displayName: 'Sampled',
+        description: 'Whether the trace is sampled',
         type: 'boolean',
-        defaultValue: true
+        defaultValue: DEFAULTS.SAMPLED
       }
     ],
-    run(context, sampled) {
-      return sampled ? '1' : '0';
+    async run(context, sampled) {
+      const isSampled = validateParam(sampled, 'boolean', null, null, DEFAULTS.SAMPLED);
+      return isSampled ? '1' : '0';
     }
   },
 
   {
     name: 'zipkin_flags',
-    displayName: 'Trace Headers:Zipkin B3 Flags',
+    displayName: 'Trace Headers: Zipkin B3 Flags',
     description: 'Generate Zipkin B3 flags header',
     args: [],
-    run() {
+    async run() {
       return '0';
     }
   },
 
   {
     name: 'zipkin_b3_single',
-    displayName: 'Trace Headers:Zipkin B3 Single Header',
+    displayName: 'Trace Headers: Zipkin B3 Single Header',
     description: 'Generate Zipkin B3 single header format',
     args: [
       {
-        displayName: 'Trace Headers:Sampled',
+        displayName: 'Sampled',
+        description: 'Whether the trace is sampled',
         type: 'boolean',
-        defaultValue: true
+        defaultValue: DEFAULTS.SAMPLED
       }
     ],
-    run(context, sampled) {
+    async run(context, sampled) {
       const traceId = randomHex(16);
       const spanId = randomHex(8);
-      const sampledFlag = sampled ? '1' : '0';
+      const isSampled = validateParam(sampled, 'boolean', null, null, DEFAULTS.SAMPLED);
+      const sampledFlag = isSampled ? '1' : '0';
       return `${traceId}-${spanId}-${sampledFlag}`;
     }
   },
@@ -414,27 +620,32 @@ module.exports.templateTags = [
   // New Relic Headers
   {
     name: 'newrelic_header',
-    displayName: 'Trace Headers:New Relic Header',
+    displayName: 'Trace Headers: New Relic Header',
     description: 'Generate New Relic distributed tracing header',
     args: [
       {
-        displayName: 'Trace Headers:Account ID',
+        displayName: 'Account ID',
+        description: 'New Relic account ID (numeric)',
         type: 'string',
-        defaultValue: '1234567'
+        defaultValue: DEFAULTS.ACCOUNT_ID
       },
       {
-        displayName: 'Trace Headers:App ID',
+        displayName: 'App ID',
+        description: 'Application ID (numeric)',
         type: 'string',
-        defaultValue: '7654321'
+        defaultValue: DEFAULTS.NEW_RELIC_APP_ID
       }
     ],
-    run(context, accountId, appId) {
+    async run(context, accountId, appId) {
+      const safeAccountId = validateParam(accountId, 'string', PATTERNS.NUMERIC, null, DEFAULTS.ACCOUNT_ID);
+      const safeAppId = validateParam(appId, 'string', PATTERNS.NUMERIC, null, DEFAULTS.NEW_RELIC_APP_ID);
+      
       const payload = {
         v: [0, 1],
         d: {
           ty: 'App',
-          ac: accountId,
-          ap: appId,
+          ac: safeAccountId,
+          ap: safeAppId,
           id: randomHex(8),
           tr: randomHex(8),
           pr: 0.5,
@@ -448,20 +659,20 @@ module.exports.templateTags = [
 
   {
     name: 'newrelic_id',
-    displayName: 'Trace Headers:New Relic ID',
+    displayName: 'Trace Headers: New Relic ID',
     description: 'Generate New Relic ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(8);
     }
   },
 
   {
     name: 'newrelic_transaction',
-    displayName: 'Trace Headers:New Relic Transaction',
+    displayName: 'Trace Headers: New Relic Transaction',
     description: 'Generate New Relic transaction header',
     args: [],
-    run() {
+    async run() {
       return randomHex(16);
     }
   },
@@ -469,20 +680,20 @@ module.exports.templateTags = [
   // Google Cloud Trace
   {
     name: 'gcloud_trace_context',
-    displayName: 'Trace Headers:Google Cloud Trace Context',
+    displayName: 'Trace Headers: Google Cloud Trace Context',
     description: 'Generate Google Cloud trace context header',
     args: [],
-    run() {
+    async run() {
       return `${randomHex(16)}/${randomNumber()};o=1`;
     }
   },
 
   {
     name: 'goog_trace',
-    displayName: 'Trace Headers:Google Trace',
+    displayName: 'Trace Headers: Google Trace',
     description: 'Generate Google trace header',
     args: [],
-    run() {
+    async run() {
       return `${randomHex(16)}/${randomNumber()}`;
     }
   },
@@ -490,10 +701,10 @@ module.exports.templateTags = [
   // CloudFlare Headers
   {
     name: 'cloudflare_ray',
-    displayName: 'Trace Headers:CloudFlare Ray ID',
+    displayName: 'Trace Headers: CloudFlare Ray ID',
     description: 'Generate CloudFlare Ray ID header',
     args: [],
-    run() {
+    async run() {
       const dcs = ['DFW', 'LAX', 'ORD', 'JFK', 'LHR', 'NRT', 'SJC', 'SEA', 'MIA', 'ATL', 'BOS', 'IAD'];
       const dc = dcs[Math.floor(Math.random() * dcs.length)];
       return `${randomHex(8)}-${dc}`;
@@ -502,10 +713,10 @@ module.exports.templateTags = [
 
   {
     name: 'cloudflare_request_id',
-    displayName: 'Trace Headers:CloudFlare Request ID',
+    displayName: 'Trace Headers: CloudFlare Request ID',
     description: 'Generate CloudFlare request ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(16);
     }
   },
@@ -513,65 +724,71 @@ module.exports.templateTags = [
   // Sentry Headers
   {
     name: 'sentry_trace',
-    displayName: 'Trace Headers:Sentry Trace',
+    displayName: 'Trace Headers: Sentry Trace',
     description: 'Generate Sentry trace header',
     args: [
       {
-        displayName: 'Trace Headers:Sampled',
+        displayName: 'Sampled',
+        description: 'Whether the trace is sampled',
         type: 'boolean',
-        defaultValue: true
+        defaultValue: DEFAULTS.SAMPLED
       }
     ],
-    run(context, sampled) {
+    async run(context, sampled) {
       const traceId = randomHex(16);
       const spanId = randomHex(8);
-      const sampledFlag = sampled ? '1' : '0';
+      const isSampled = validateParam(sampled, 'boolean', null, null, DEFAULTS.SAMPLED);
+      const sampledFlag = isSampled ? '1' : '0';
       return `${traceId}-${spanId}-${sampledFlag}`;
     }
   },
 
   {
     name: 'sentry_baggage',
-    displayName: 'Trace Headers:Sentry Baggage',
+    displayName: 'Trace Headers: Sentry Baggage',
     description: 'Generate Sentry baggage header',
     args: [
       {
-        displayName: 'Trace Headers:Environment',
+        displayName: 'Environment',
+        description: 'Environment name (alphanumeric, dash, underscore, dot)',
         type: 'string',
-        defaultValue: 'production'
+        defaultValue: DEFAULTS.ENVIRONMENT
       }
     ],
-    run(context, environment) {
-      return `sentry-environment=${environment},sentry-trace_id=${randomHex(16)}`;
+    async run(context, environment) {
+      const safeEnv = validateParam(environment, 'string', PATTERNS.ENVIRONMENT_NAME, null, DEFAULTS.ENVIRONMENT);
+      return `sentry-environment=${safeEnv},sentry-trace_id=${randomHex(16)}`;
     }
   },
 
   // Elastic APM
   {
     name: 'elastic_traceparent',
-    displayName: 'Trace Headers:Elastic APM Traceparent',
+    displayName: 'Trace Headers: Elastic APM Traceparent',
     description: 'Generate Elastic APM traceparent header (W3C format)',
     args: [
       {
-        displayName: 'Trace Headers:Sampled',
+        displayName: 'Sampled',
+        description: 'Whether the trace is sampled',
         type: 'boolean',
-        defaultValue: true
+        defaultValue: DEFAULTS.SAMPLED
       }
     ],
-    run(context, sampled) {
+    async run(context, sampled) {
       const traceId = randomHex(16);
       const spanId = randomHex(8);
-      const flags = sampled ? '01' : '00';
+      const isSampled = validateParam(sampled, 'boolean', null, null, DEFAULTS.SAMPLED);
+      const flags = isSampled ? '01' : '00';
       return `00-${traceId}-${spanId}-${flags}`;
     }
   },
 
   {
     name: 'elastic_tracestate',
-    displayName: 'Trace Headers:Elastic APM Tracestate',
+    displayName: 'Trace Headers: Elastic APM Tracestate',
     description: 'Generate Elastic APM tracestate header',
     args: [],
-    run() {
+    async run() {
       return `es=s:1.0`;
     }
   },
@@ -579,28 +796,30 @@ module.exports.templateTags = [
   // Dynatrace Headers
   {
     name: 'dynatrace_header',
-    displayName: 'Trace Headers:Dynatrace Header',
+    displayName: 'Trace Headers: Dynatrace Header',
     description: 'Generate Dynatrace tracing header',
     args: [
       {
-        displayName: 'Trace Headers:Application ID',
+        displayName: 'Application ID',
+        description: 'Dynatrace application ID (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: 'APPLICATION-12345'
+        defaultValue: DEFAULTS.DYNATRACE_APP_ID
       }
     ],
-    run(context, appId) {
+    async run(context, appId) {
+      const safeAppId = validateParam(appId, 'string', PATTERNS.APP_ID, null, DEFAULTS.DYNATRACE_APP_ID);
       const traceId = randomNumber();
       const spanId = randomNumber();
-      return `FW4;${traceId};${spanId};1;${appId}`;
+      return `FW4;${traceId};${spanId};1;${safeAppId}`;
     }
   },
 
   {
     name: 'dynatrace_origin',
-    displayName: 'Trace Headers:Dynatrace Origin',
+    displayName: 'Trace Headers: Dynatrace Origin',
     description: 'Generate Dynatrace origin header',
     args: [],
-    run() {
+    async run() {
       return `dt=${randomHex(8)}`;
     }
   },
@@ -608,10 +827,10 @@ module.exports.templateTags = [
   // AppDynamics
   {
     name: 'appdynamics_header',
-    displayName: 'Trace Headers:AppDynamics Header',
+    displayName: 'Trace Headers: AppDynamics Header',
     description: 'Generate AppDynamics singularityheader',
     args: [],
-    run() {
+    async run() {
       return `${randomHex(8)}-${randomHex(4)}-${randomHex(4)}-${randomHex(4)}-${randomHex(12)}`;
     }
   },
@@ -619,64 +838,68 @@ module.exports.templateTags = [
   // Honeycomb
   {
     name: 'honeycomb_trace',
-    displayName: 'Trace Headers:Honeycomb Trace',
+    displayName: 'Trace Headers: Honeycomb Trace',
     description: 'Generate Honeycomb trace header',
     args: [
       {
-        displayName: 'Trace Headers:Dataset',
+        displayName: 'Dataset',
+        description: 'Dataset name (alphanumeric, dash, underscore, dot)',
         type: 'string',
-        defaultValue: 'my-service'
+        defaultValue: DEFAULTS.DATASET
       }
     ],
-    run(context, dataset) {
+    async run(context, dataset) {
+      validateParam(dataset, 'string', PATTERNS.SERVICE_NAME, null, DEFAULTS.DATASET);
       return randomHex(16);
     }
   },
 
   {
     name: 'honeycomb_dataset',
-    displayName: 'Trace Headers:Honeycomb Dataset',
+    displayName: 'Trace Headers: Honeycomb Dataset',
     description: 'Generate Honeycomb dataset header',
     args: [
       {
-        displayName: 'Trace Headers:Dataset Name',
+        displayName: 'Dataset Name',
+        description: 'Name of the dataset (alphanumeric, dash, underscore, dot)',
         type: 'string',
-        defaultValue: 'my-service'
+        defaultValue: DEFAULTS.DATASET
       }
     ],
-    run(context, dataset) {
-      return dataset;
+    async run(context, dataset) {
+      return validateParam(dataset, 'string', PATTERNS.SERVICE_NAME, null, DEFAULTS.DATASET);
     }
   },
 
   {
     name: 'honeycomb_samplerate',
-    displayName: 'Trace Headers:Honeycomb Sample Rate',
+    displayName: 'Trace Headers: Honeycomb Sample Rate',
     description: 'Generate Honeycomb sample rate header',
     args: [
       {
-        displayName: 'Trace Headers:Sample Rate',
+        displayName: 'Sample Rate',
+        description: 'Sampling rate (1, 10, or 100)',
         type: 'enum',
-        defaultValue: '1',
+        defaultValue: DEFAULTS.SAMPLE_RATE,
         options: [
-          { displayName: 'Trace Headers:1 (100%)', value: '1' },
-          { displayName: 'Trace Headers:10 (10%)', value: '10' },
-          { displayName: 'Trace Headers:100 (1%)', value: '100' }
+          { displayName: '1 (100%)', value: '1' },
+          { displayName: '10 (10%)', value: '10' },
+          { displayName: '100 (1%)', value: '100' }
         ]
       }
     ],
-    run(context, rate) {
-      return rate;
+    async run(context, rate) {
+      return validateParam(rate, 'enum', null, ENUMS.SAMPLE_RATE, DEFAULTS.SAMPLE_RATE);
     }
   },
 
   // LightStep
   {
     name: 'lightstep_span_context',
-    displayName: 'Trace Headers:LightStep Span Context',
+    displayName: 'Trace Headers: LightStep Span Context',
     description: 'Generate LightStep span context header',
     args: [],
-    run() {
+    async run() {
       return randomHex(16);
     }
   },
@@ -684,112 +907,149 @@ module.exports.templateTags = [
   // Istio/Envoy
   {
     name: 'envoy_request_id',
-    displayName: 'Trace Headers:Envoy Request ID',
+    displayName: 'Trace Headers: Envoy Request ID',
     description: 'Generate Envoy request ID header',
     args: [],
-    run() {
+    async run() {
       return randomUUID();
     }
   },
 
   {
     name: 'envoy_original_path',
-    displayName: 'Trace Headers:Envoy Original Path',
+    displayName: 'Trace Headers: Envoy Original Path',
     description: 'Generate Envoy original path header',
     args: [
       {
-        displayName: 'Trace Headers:Original Path',
+        displayName: 'Original Path',
+        description: 'Original request path (valid URL path)',
         type: 'string',
-        defaultValue: '/api/v1/users'
+        defaultValue: DEFAULTS.PATH
       }
     ],
-    run(context, path) {
-      return path;
+    async run(context, path) {
+      return validateParam(path, 'string', PATTERNS.PATH, null, DEFAULTS.PATH);
     }
   },
 
   // Tyk API Gateway Headers
   {
     name: 'tyk_trace_id',
-    displayName: 'Trace Headers:Tyk Trace ID',
+    displayName: 'Trace Headers: Tyk Trace ID',
     description: 'Generate Tyk API Gateway trace ID header',
     args: [
       {
-        displayName: 'Trace Headers:Format',
+        displayName: 'Format',
+        description: 'ID format type',
         type: 'enum',
-        defaultValue: 'hex',
+        defaultValue: DEFAULTS.FORMAT,
         options: [
-          { displayName: 'Trace Headers:Hexadecimal', value: 'hex' },
-          { displayName: 'Trace Headers:UUID', value: 'uuid' },
-          { displayName: 'Trace Headers:Numeric', value: 'numeric' }
+          { displayName: 'Hexadecimal', value: 'hex' },
+          { displayName: 'UUID', value: 'uuid' },
+          { displayName: 'Numeric', value: 'numeric' }
+        ]
+      },
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
         ]
       }
     ],
-    run(context, format) {
-      if (format === 'uuid') return randomUUID();
-      if (format === 'numeric') return randomNumber();
+    async run(context, format, guidFormat) {
+      const safeFormat = validateParam(format, 'enum', null, ENUMS.FORMAT, DEFAULTS.FORMAT);
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      
+      if (safeFormat === 'uuid') {
+        const uuid = randomUUID();
+        return formatGUID(uuid, safeGuidFormat);
+      }
+      if (safeFormat === 'numeric') return randomNumber();
       return randomHex(16);
     }
   },
 
   {
     name: 'tyk_request_id',
-    displayName: 'Trace Headers:Tyk Request ID',
+    displayName: 'Trace Headers: Tyk Request ID',
     description: 'Generate Tyk API Gateway request ID header',
-    args: [],
-    run() {
-      return randomUUID();
+    args: [
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
+        ]
+      }
+    ],
+    async run(context, guidFormat) {
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      const uuid = randomUUID();
+      return formatGUID(uuid, safeGuidFormat);
     }
   },
 
   {
     name: 'tyk_authorization',
-    displayName: 'Trace Headers:Tyk Authorization',
+    displayName: 'Trace Headers: Tyk Authorization',
     description: 'Generate Tyk authorization header (for management API)',
     args: [
       {
-        displayName: 'Trace Headers:Secret Key',
+        displayName: 'Secret Key',
+        description: 'Tyk secret key (alphanumeric, dash, underscore)',
         type: 'string',
-        defaultValue: 'your-tyk-secret-key'
+        defaultValue: DEFAULTS.SECRET_KEY
       }
     ],
-    run(context, secretKey) {
-      return secretKey;
+    async run(context, secretKey) {
+      return validateParam(secretKey, 'string', PATTERNS.KEY_VALUE, null, DEFAULTS.SECRET_KEY);
     }
   },
 
   {
     name: 'tyk_version',
-    displayName: 'Trace Headers:Tyk API Version',
+    displayName: 'Trace Headers: Tyk API Version',
     description: 'Generate Tyk API version header',
     args: [
       {
-        displayName: 'Trace Headers:Version',
+        displayName: 'Version',
+        description: 'API version (version string like v1, v2.1)',
         type: 'string',
-        defaultValue: 'v1'
+        defaultValue: DEFAULTS.API_VERSION
       }
     ],
-    run(context, version) {
-      return version;
+    async run(context, version) {
+      return validateParam(version, 'string', PATTERNS.VERSION_STRING, null, DEFAULTS.API_VERSION);
     }
   },
 
   {
     name: 'tyk_base_api_id',
-    displayName: 'Trace Headers:Tyk Base API ID',
+    displayName: 'Trace Headers: Tyk Base API ID',
     description: 'Generate Tyk base API ID header for versioned APIs',
     args: [],
-    run() {
+    async run() {
       return randomHex(24);
     }
   },
 
   {
     name: 'tyk_session_id',
-    displayName: 'Trace Headers:Tyk Session ID',
+    displayName: 'Trace Headers: Tyk Session ID',
     description: 'Generate Tyk session identifier',
     args: [],
-    run() {
+    async run() {
       return 'tyk-' + randomUUID();
     }
   },
@@ -797,196 +1057,264 @@ module.exports.templateTags = [
   // Snowflake ID Headers
   {
     name: 'snowflake_id',
-    displayName: 'Trace Headers:Snowflake ID',
+    displayName: 'Trace Headers: Snowflake ID',
     description: 'Generate a Twitter-style Snowflake ID (64-bit distributed unique identifier)',
     args: [
       {
-        displayName: 'Trace Headers:Machine ID',
+        displayName: 'Machine ID',
+        description: 'Machine identifier (0-1023)',
         type: 'number',
-        defaultValue: 0
+        defaultValue: DEFAULTS.MACHINE_ID
       },
       {
-        displayName: 'Trace Headers:Epoch Type',
+        displayName: 'Epoch Type',
+        description: 'Epoch starting point',
         type: 'enum',
-        defaultValue: 'twitter',
+        defaultValue: DEFAULTS.EPOCH_TYPE,
         options: [
-          { displayName: 'Trace Headers:Twitter (Nov 4, 2010)', value: 'twitter' },
-          { displayName: 'Trace Headers:Discord (Jan 1, 2015)', value: 'discord' },
-          { displayName: 'Trace Headers:Unix Epoch (Jan 1, 1970)', value: 'unix' },
-          { displayName: 'Trace Headers:Custom', value: 'custom' }
+          { displayName: 'Twitter (Nov 4, 2010)', value: 'twitter' },
+          { displayName: 'Discord (Jan 1, 2015)', value: 'discord' },
+          { displayName: 'Unix Epoch (Jan 1, 1970)', value: 'unix' },
+          { displayName: 'Custom', value: 'custom' }
         ]
       },
       {
-        displayName: 'Trace Headers:Custom Epoch (ms)',
+        displayName: 'Custom Epoch (ms)',
+        description: 'Custom epoch time in milliseconds',
         type: 'number',
-        defaultValue: 1288834974657
+        defaultValue: DEFAULTS.CUSTOM_EPOCH
       }
     ],
-    run(context, machineId, epochType, customEpoch) {
+    async run(context, machineId, epochType, customEpoch) {
+      const safeMachineId = validateParam(machineId, 'number', null, null, DEFAULTS.MACHINE_ID);
+      const safeEpochType = validateParam(epochType, 'enum', null, ENUMS.EPOCH_TYPE, DEFAULTS.EPOCH_TYPE);
+      const safeCustomEpoch = validateParam(customEpoch, 'number', null, null, DEFAULTS.CUSTOM_EPOCH);
+      
       let epoch;
-      switch (epochType) {
+      switch (safeEpochType) {
         case 'twitter': epoch = 1288834974657; break;
         case 'discord': epoch = 1420070400000; break;
         case 'unix': epoch = 0; break;
-        case 'custom': epoch = customEpoch; break;
+        case 'custom': epoch = safeCustomEpoch; break;
         default: epoch = 1288834974657;
       }
-      return generateSnowflake(epoch, machineId);
+      return generateSnowflake(epoch, safeMachineId);
     }
   },
 
   {
     name: 'twitter_snowflake',
-    displayName: 'Trace Headers:Twitter Snowflake',
+    displayName: 'Trace Headers: Twitter Snowflake',
     description: 'Generate a Twitter Snowflake ID using Twitter\'s epoch',
     args: [
       {
-        displayName: 'Trace Headers:Machine ID',
+        displayName: 'Machine ID',
+        description: 'Machine identifier (0-1023)',
         type: 'number',
-        defaultValue: 0
+        defaultValue: DEFAULTS.MACHINE_ID
       }
     ],
-    run(context, machineId) {
-      return generateSnowflake(1288834974657, machineId);
+    async run(context, machineId) {
+      const safeMachineId = validateParam(machineId, 'number', null, null, DEFAULTS.MACHINE_ID);
+      return generateSnowflake(1288834974657, safeMachineId);
     }
   },
 
   {
     name: 'discord_snowflake',
-    displayName: 'Trace Headers:Discord Snowflake',
+    displayName: 'Trace Headers: Discord Snowflake',
     description: 'Generate a Discord Snowflake ID using Discord\'s epoch',
     args: [
       {
-        displayName: 'Trace Headers:Machine ID',
+        displayName: 'Machine ID',
+        description: 'Machine identifier (0-1023)',
         type: 'number',
-        defaultValue: 0
+        defaultValue: DEFAULTS.MACHINE_ID
       }
     ],
-    run(context, machineId) {
-      return generateSnowflake(1420070400000, machineId);
+    async run(context, machineId) {
+      const safeMachineId = validateParam(machineId, 'number', null, null, DEFAULTS.MACHINE_ID);
+      return generateSnowflake(1420070400000, safeMachineId);
     }
   },
 
   {
     name: 'custom_snowflake',
-    displayName: 'Trace Headers:Custom Snowflake ID',
+    displayName: 'Trace Headers: Custom Snowflake ID',
     description: 'Generate a custom Snowflake ID with configurable parameters',
     args: [
       {
-        displayName: 'Trace Headers:Epoch Start (ms)',
+        displayName: 'Epoch Start (ms)',
+        description: 'Starting epoch time in milliseconds',
         type: 'number',
         defaultValue: 1609459200000
       },
       {
-        displayName: 'Trace Headers:Machine ID',
+        displayName: 'Machine ID',
+        description: 'Machine identifier (0-1023)',
         type: 'number',
-        defaultValue: 0
+        defaultValue: DEFAULTS.MACHINE_ID
       }
     ],
-    run(context, epochStart, machineId) {
-      return generateSnowflake(epochStart, machineId);
+    async run(context, epochStart, machineId) {
+      const safeEpochStart = validateParam(epochStart, 'number', null, null, 1609459200000);
+      const safeMachineId = validateParam(machineId, 'number', null, null, DEFAULTS.MACHINE_ID);
+      return generateSnowflake(safeEpochStart, safeMachineId);
     }
   },
 
   // Generic Correlation Headers
   {
     name: 'correlation_id',
-    displayName: 'Trace Headers:Correlation ID',
+    displayName: 'Trace Headers: Correlation ID',
     description: 'Generate a correlation ID header',
     args: [
       {
-        displayName: 'Trace Headers:Format',
+        displayName: 'Format',
+        description: 'ID format type',
         type: 'enum',
-        defaultValue: 'uuid',
+        defaultValue: DEFAULTS.CORRELATION_FORMAT,
         options: [
-          { displayName: 'Trace Headers:UUID', value: 'uuid' },
-          { displayName: 'Trace Headers:Hex (64-bit)', value: 'hex64' },
-          { displayName: 'Trace Headers:Hex (128-bit)', value: 'hex128' },
-          { displayName: 'Trace Headers:Numeric', value: 'numeric' }
+          { displayName: 'UUID', value: 'uuid' },
+          { displayName: 'Hex (64-bit)', value: 'hex64' },
+          { displayName: 'Hex (128-bit)', value: 'hex128' },
+          { displayName: 'Numeric', value: 'numeric' }
+        ]
+      },
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format when UUID selected (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
         ]
       }
     ],
-    run(context, format) {
-      switch (format) {
-        case 'uuid': return randomUUID();
+    async run(context, format, guidFormat) {
+      const safeFormat = validateParam(format, 'enum', null, ENUMS.CORRELATION_FORMAT, DEFAULTS.CORRELATION_FORMAT);
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      
+      switch (safeFormat) {
+        case 'uuid': 
+          const uuid = randomUUID();
+          return formatGUID(uuid, safeGuidFormat);
         case 'hex64': return randomHex(8);
         case 'hex128': return randomHex(16);
         case 'numeric': return randomNumber();
-        default: return randomUUID();
+        default: 
+          const defaultUuid = randomUUID();
+          return formatGUID(defaultUuid, safeGuidFormat);
       }
     }
   },
 
   {
     name: 'trace_id',
-    displayName: 'Trace Headers:Generic Trace ID',
+    displayName: 'Trace Headers: Generic Trace ID',
     description: 'Generate a generic trace ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(16);
     }
   },
 
   {
     name: 'span_id',
-    displayName: 'Trace Headers:Generic Span ID',
+    displayName: 'Trace Headers: Generic Span ID',
     description: 'Generate a generic span ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(8);
     }
   },
 
   {
     name: 'parent_id',
-    displayName: 'Trace Headers:Generic Parent ID',
+    displayName: 'Trace Headers: Generic Parent ID',
     description: 'Generate a generic parent ID header',
     args: [],
-    run() {
+    async run() {
       return randomHex(8);
     }
   },
 
   {
     name: 'operation_id',
-    displayName: 'Trace Headers:Operation ID',
+    displayName: 'Trace Headers: Operation ID',
     description: 'Generate an operation ID header',
-    args: [],
-    run() {
-      return randomUUID();
+    args: [
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
+        ]
+      }
+    ],
+    async run(context, guidFormat) {
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      const uuid = randomUUID();
+      return formatGUID(uuid, safeGuidFormat);
     }
   },
 
   {
     name: 'session_id',
-    displayName: 'Trace Headers:Session ID',
+    displayName: 'Trace Headers: Session ID',
     description: 'Generate a session ID header',
     args: [],
-    run() {
+    async run() {
       return 'sess_' + randomHex(16);
     }
   },
 
   {
     name: 'user_id',
-    displayName: 'Trace Headers:User ID',
+    displayName: 'Trace Headers: User ID',
     description: 'Generate a user ID header',
     args: [
       {
-        displayName: 'Trace Headers:Format',
+        displayName: 'Format',
+        description: 'ID format type',
         type: 'enum',
-        defaultValue: 'numeric',
+        defaultValue: DEFAULTS.USER_FORMAT,
         options: [
-          { displayName: 'Trace Headers:Numeric', value: 'numeric' },
-          { displayName: 'Trace Headers:UUID', value: 'uuid' },
-          { displayName: 'Trace Headers:Hex', value: 'hex' }
+          { displayName: 'Numeric', value: 'numeric' },
+          { displayName: 'UUID', value: 'uuid' },
+          { displayName: 'Hex', value: 'hex' }
+        ]
+      },
+      {
+        displayName: 'GUID Format',
+        description: 'GUID format when UUID selected (N=no hyphens, D=hyphens, B=braces, P=parentheses)',
+        type: 'enum',
+        defaultValue: DEFAULTS.GUID_FORMAT,
+        options: [
+          { displayName: 'N (df9843665f310d8374507e34cb60954e)', value: 'N' },
+          { displayName: 'D (df984366-5f31-0d83-7450-7e34cb60954e)', value: 'D' },
+          { displayName: 'B ({df984366-5f31-0d83-7450-7e34cb60954e})', value: 'B' },
+          { displayName: 'P ((df984366-5f31-0d83-7450-7e34cb60954e))', value: 'P' }
         ]
       }
     ],
-    run(context, format) {
-      switch (format) {
+    async run(context, format, guidFormat) {
+      const safeFormat = validateParam(format, 'enum', null, ENUMS.USER_FORMAT, DEFAULTS.USER_FORMAT);
+      const safeGuidFormat = validateParam(guidFormat, 'enum', null, ENUMS.GUID_FORMAT, DEFAULTS.GUID_FORMAT);
+      
+      switch (safeFormat) {
         case 'numeric': return Math.floor(Math.random() * 1000000).toString();
-        case 'uuid': return randomUUID();
+        case 'uuid': 
+          const uuid = randomUUID();
+          return formatGUID(uuid, safeGuidFormat);
         case 'hex': return randomHex(8);
         default: return Math.floor(Math.random() * 1000000).toString();
       }
@@ -995,30 +1323,30 @@ module.exports.templateTags = [
 
   {
     name: 'tenant_id',
-    displayName: 'Trace Headers:Tenant ID',
+    displayName: 'Trace Headers: Tenant ID',
     description: 'Generate a tenant ID header',
     args: [],
-    run() {
+    async run() {
       return 'tenant_' + randomHex(8);
     }
   },
 
   {
     name: 'application_id',
-    displayName: 'Trace Headers:Application ID',
+    displayName: 'Trace Headers: Application ID',
     description: 'Generate an application ID header',
     args: [],
-    run() {
+    async run() {
       return 'app_' + randomHex(12);
     }
   },
 
   {
     name: 'service_id',
-    displayName: 'Trace Headers:Service ID',
+    displayName: 'Trace Headers: Service ID',
     description: 'Generate a service ID header',
     args: [],
-    run() {
+    async run() {
       return 'svc_' + randomHex(10);
     }
   },
@@ -1026,30 +1354,35 @@ module.exports.templateTags = [
   // Custom Trace Header Builder
   {
     name: 'custom_trace_header',
-    displayName: 'Trace Headers:Custom Trace Header',
+    displayName: 'Trace Headers: Custom Trace Header',
     description: 'Generate a custom trace header with configurable format',
     args: [
       {
-        displayName: 'Trace Headers:Format',
+        displayName: 'Format',
+        description: 'Header format template (use {traceId}, {spanId}, {timestamp})',
         type: 'string',
-        defaultValue: '{traceId}-{spanId}'
+        defaultValue: DEFAULTS.TRACE_FORMAT
       },
       {
-        displayName: 'Trace Headers:Trace ID Length',
+        displayName: 'Trace ID Length',
+        description: 'Trace ID length in bits',
         type: 'enum',
-        defaultValue: '128',
+        defaultValue: DEFAULTS.TRACE_LENGTH,
         options: [
-          { displayName: 'Trace Headers:64-bit', value: '64' },
-          { displayName: 'Trace Headers:128-bit', value: '128' }
+          { displayName: '64-bit', value: '64' },
+          { displayName: '128-bit', value: '128' }
         ]
       }
     ],
-    run(context, format, traceIdLength) {
-      const traceId = traceIdLength === '128' ? randomHex(16) : randomHex(8);
+    async run(context, format, traceIdLength) {
+      const safeFormat = validateParam(format, 'string', PATTERNS.TRACE_FORMAT, null, DEFAULTS.TRACE_FORMAT);
+      const safeLength = validateParam(traceIdLength, 'enum', null, ENUMS.TRACE_LENGTH, DEFAULTS.TRACE_LENGTH);
+      
+      const traceId = safeLength === '128' ? randomHex(16) : randomHex(8);
       const spanId = randomHex(8);
       const ts = timestamp();
       
-      return format
+      return safeFormat
         .replace(/{traceId}/g, traceId)
         .replace(/{spanId}/g, spanId)
         .replace(/{timestamp}/g, ts);
